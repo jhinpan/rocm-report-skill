@@ -1,0 +1,5 @@
+interface:
+  display_name: "ROCm Report Skill"
+  short_description: "Profile AMD ROCm and FlyDSL kernels"
+  brand_color: "#F97316"
+  default_prompt: "Use $rocm-report-skill to profile this ROCm/FlyDSL kernel and turn the artifacts into one testable optimization hypothesis."
