@@ -93,6 +93,7 @@ falsify it.
 | `references/06-agent-limitations.md` | What the agent can and cannot infer from profile data |
 | `scripts/init_run_dir.py` | Create a clean run directory |
 | `scripts/find_idle_gpu.py` | Suggest an idle ROCm GPU from `rocm-smi` output |
+| `scripts/summarize_kernel_stats.py` | Summarize rocprofv3 `*_kernel_stats.csv` timing |
 | `scripts/summarize_att_source.py` | Summarize ATT `code.json` source mapping and stalls |
 
 ## Critical Lessons
@@ -108,5 +109,8 @@ falsify it.
 - When the diagnosis says "overlap more," convert that into a concrete
   experiment: move a prefetch earlier, split a wait, increase staging depth,
   change CTA work assignment, or alter scheduler grouping. Then profile again.
+- Treat conflicting timing sources as a blocker. If in-test timers, torch event
+  timers, and rocprof kernel stats disagree, use rocprof kernel stats for the
+  profiled kernel and record the disagreement before making optimization claims.
 - Mark this skill experimental until it has been validated on several real
   FlyDSL kernels and at least one non-FlyDSL HIP/ROCm kernel.

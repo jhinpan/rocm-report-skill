@@ -33,7 +33,16 @@ capture. Keep one valid dispatch directory and document why it was selected.
 
 ## 4. Parse artifacts
 
-Run `scripts/summarize_att_source.py` on the dispatch directory. Verify:
+First parse kernel stats:
+
+```bash
+python3 scripts/summarize_kernel_stats.py \
+  "$PROFILE_RUN_DIR/raw/stats/discover_kernel_stats.csv" \
+  --include-regex '<kernel regex>' \
+  --json-out "$PROFILE_RUN_DIR/analysis/kernel_stats.json"
+```
+
+Then run `scripts/summarize_att_source.py` on the dispatch directory. Verify:
 
 - `code.json` exists
 - most ISA rows have source locations when source mapping is expected
@@ -42,6 +51,10 @@ Run `scripts/summarize_att_source.py` on the dispatch directory. Verify:
 
 If mapping is empty or collapsed, fix collection/source-location first. Do not
 diagnose overlap from a bad map.
+
+If timing sources disagree, prefer the rocprof kernel stats row for the exact
+kernel. In-test profilers can be distorted when nested under rocprofv3, and
+framework event timing can include launch or wrapper overhead.
 
 ## 5. Diagnose
 

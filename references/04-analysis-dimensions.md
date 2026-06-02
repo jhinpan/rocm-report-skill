@@ -3,6 +3,21 @@
 Walk all dimensions before proposing code. Most wrong optimization plans come
 from stopping after the first visible hotspot.
 
+## 0. Timing Source Sanity
+
+Question: which timing number is the source of truth?
+
+Signals:
+
+- rocprofv3 kernel stats for the exact kernel name
+- in-test profiler output
+- torch/HIP event timing
+- framework baseline timing
+
+If these disagree, do not average them. Prefer the rocprofv3 kernel stats row
+for the profiled kernel and document the disagreement. Nested profilers often
+change timing behavior or report nonsensical sub-microsecond values.
+
 ## 1. Launch Geometry and Saturation
 
 Question: does the grid produce enough CTAs and waves to fill the GPU?
@@ -100,6 +115,11 @@ Signals:
 
 If attribution quality is poor, file or fix source-location support first. Do
 not infer a schedule rewrite from a collapsed line.
+
+High mapped percentage alone is not enough. If most stalls collapse to a kernel
+decorator/function line or generic helper, the trace is still too coarse for
+schedule-level optimization. Treat this as a tooling/source-location problem
+before claiming a precise code fix.
 
 ## 7. Baseline Comparison
 

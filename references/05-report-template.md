@@ -29,6 +29,8 @@ One paragraph with the main finding and confidence.
 | Metric | Value | Artifact |
 |---|---:|---|
 | Duration | | |
+| rocprof kernel avg | | `raw/stats/*_kernel_stats.csv` |
+| Other timing sources | | note if they disagree |
 | Total CTAs / waves | | |
 | Mapped source rows | | `analysis/att_source_summary.json` |
 | Top source line | | |
