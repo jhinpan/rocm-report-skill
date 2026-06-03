@@ -17,6 +17,7 @@ profile/<run-name>/
     input_trace.yaml
     ui_output_agent_*_dispatch_*/
   analysis/
+    run_metadata.json
     att_source_summary.json
     notes.md
   cache/

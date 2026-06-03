@@ -31,10 +31,10 @@ One paragraph with the main finding and confidence.
 | Duration | | |
 | rocprof kernel avg | | `raw/stats/*_kernel_stats.csv` |
 | Other timing sources | | note if they disagree |
-| Total CTAs / waves | | |
+| Total CTAs / waves | | grid/block from `--kernel-trace` / launch params (not ATT) |
 | Mapped source rows | | `analysis/att_source_summary.json` |
-| Top source line | | |
-| Top instruction class | | |
+| Top source line | | `analysis/att_source_summary.json` |
+| Top instruction class | | single-CU ATT sample (`att_target_cu`), not device-wide |
 
 ## 2. Evidence
 

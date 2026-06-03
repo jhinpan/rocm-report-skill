@@ -54,14 +54,20 @@ falsify it.
    Then run discovery and ATT collection as described in
    `references/02-rocprofv3-collection.md`.
 
-5. Parse ATT source mapping and hotspots from the kept dispatch directory:
+5. Parse ATT source mapping and hotspots from the kept dispatch directory.
+   First pick the real dispatch (rocprofv3 leaves empty-shell `dispatch_*` dirs;
+   the real capture has wave files — see `references/03-att-artifacts.md`), then
+   point the script at that single directory:
 
    ```bash
    python3 scripts/summarize_att_source.py \
-     profile/<run-name>/att/ui_output_agent_*_dispatch_* \
+     profile/<run-name>/att/ui_output_agent_<id>_dispatch_<N> \
      --top-source 20 \
      --json-out profile/<run-name>/analysis/att_source_summary.json
    ```
+
+   The script also accepts a glob (`ui_output_agent_*_dispatch_*`) and summarizes
+   each match, which is a quick way to spot the empty shells before selecting one.
 
 6. Diagnose using `references/04-analysis-dimensions.md`. If the profile shows
    bubble time, classify the bubble before suggesting code:
@@ -95,6 +101,8 @@ falsify it.
 | `scripts/find_idle_gpu.py` | Suggest an idle ROCm GPU from `rocm-smi` output |
 | `scripts/summarize_kernel_stats.py` | Summarize rocprofv3 `*_kernel_stats.csv` timing |
 | `scripts/summarize_att_source.py` | Summarize ATT `code.json` source mapping and stalls |
+| `agents/openai.yaml` | Skill UI metadata (display name, color, default prompt) |
+| `.gitignore` | Keep heavy generated profile artifacts out of git |
 
 ## Critical Lessons
 

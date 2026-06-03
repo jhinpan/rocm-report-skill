@@ -52,7 +52,13 @@ def main() -> int:
     parser.add_argument("--json-out")
     args = parser.parse_args()
 
-    rows = summarize(Path(args.kernel_stats_csv), args.include_regex, args.limit)
+    csv_path = Path(args.kernel_stats_csv)
+    if not csv_path.is_file():
+        raise SystemExit(f"kernel stats CSV not found: {csv_path}")
+    rows = summarize(csv_path, args.include_regex, args.limit)
+    if not rows:
+        print(f"No rows matched in {csv_path}"
+              + (f" (regex {args.include_regex!r})" if args.include_regex else ""))
     for i, row in enumerate(rows, 1):
         print(
             f"{i:>2}. calls={row['calls']:<5} avg={row['average_ns'] / 1000:>9.3f} us "

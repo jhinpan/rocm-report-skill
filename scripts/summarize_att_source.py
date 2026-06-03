@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Summarize ROCprof ATT source mapping from a dispatch directory."""
+"""Summarize ROCprof ATT source mapping from one or more dispatch directories.
+
+The ATT `code.json` is a list of positional rows; its header documents the
+fields as: ISA, _, LineNumber, Source, Codeobj, Vaddr, Hit, Latency, Stall, Idle.
+We read ISA(0), LineNumber(2), Source(3), Latency(7) as total_cycles, Stall(8)
+as stall_cycles, and skip the leading "; kernel" label rows (not real ISA).
+"""
 
 from __future__ import annotations
 
@@ -48,6 +54,13 @@ def row_get(row: list, index: int, default=0):
     return row[index]
 
 
+def _to_int(value) -> int:
+    try:
+        return int(float(value))  # tolerate "512", 512, 512.0, "512.0"
+    except (TypeError, ValueError):
+        return 0
+
+
 def load_rows(dispatch_dir: Path) -> list[list]:
     code_path = dispatch_dir / "code.json"
     if not code_path.exists():
@@ -63,27 +76,24 @@ def summarize(dispatch_dir: Path, top_source: int) -> dict:
     rows = load_rows(dispatch_dir)
     wave_files = glob.glob(str(dispatch_dir / "se*_sm*_*.json"))
     mapped = 0
-    executable = 0
+    isa_rows = 0          # real ISA instructions (label rows skipped)
+    with_line = 0         # ISA rows carrying a non-zero LineNumber
     by_source = defaultdict(lambda: {"rows": 0, "total_cycles": 0, "stall_cycles": 0, "classes": Counter()})
     by_class = Counter()
     by_class_stall = Counter()
 
     for row in rows:
         asm = str(row_get(row, 0, ""))
+        # ROCprof emits label rows such as "; rmsnorm_kernel_0" -- not real ISA.
+        if asm.lstrip().startswith(";"):
+            continue
+        isa_rows += 1
         source = row_get(row, 3, "") or "<unknown>"
-        pc_index = row_get(row, 2, 0)
-        total_cycles = row_get(row, 7, 0)
-        stall_cycles = row_get(row, 8, 0)
-        try:
-            total_cycles = int(total_cycles) if isinstance(total_cycles, (int, float, str)) else 0
-        except ValueError:
-            total_cycles = 0
-        try:
-            stall_cycles = int(stall_cycles) if isinstance(stall_cycles, (int, float, str)) else 0
-        except ValueError:
-            stall_cycles = 0
-        if isinstance(pc_index, int) and pc_index != 0:
-            executable += 1
+        line_number = row_get(row, 2, 0)
+        total_cycles = _to_int(row_get(row, 7, 0))
+        stall_cycles = _to_int(row_get(row, 8, 0))
+        if isinstance(line_number, int) and line_number != 0:
+            with_line += 1
         if source != "<unknown>":
             mapped += 1
         cls = classify_asm(asm)
@@ -115,9 +125,10 @@ def summarize(dispatch_dir: Path, top_source: int) -> dict:
     return {
         "dispatch_dir": str(dispatch_dir),
         "row_count": len(rows),
-        "executable_row_count": executable,
+        "isa_row_count": isa_rows,
+        "rows_with_line_number": with_line,
         "mapped_row_count": mapped,
-        "mapped_pct": (100.0 * mapped / len(rows)) if rows else 0.0,
+        "mapped_pct": (100.0 * mapped / isa_rows) if isa_rows else 0.0,
         "wave_file_count": len(wave_files),
         "instruction_class_rows": dict(by_class.most_common()),
         "instruction_class_stall_cycles": dict(by_class_stall.most_common()),
@@ -127,8 +138,9 @@ def summarize(dispatch_dir: Path, top_source: int) -> dict:
 
 def print_text(summary: dict) -> None:
     print(f"Dispatch: {summary['dispatch_dir']}")
-    print(f"Rows: {summary['row_count']} executable={summary['executable_row_count']}")
-    print(f"Mapped: {summary['mapped_row_count']} ({summary['mapped_pct']:.1f}%)")
+    print(f"Rows: {summary['row_count']} (ISA={summary['isa_row_count']}, "
+          f"with-line={summary['rows_with_line_number']})")
+    print(f"Mapped: {summary['mapped_row_count']} ({summary['mapped_pct']:.1f}% of ISA rows)")
     print(f"Wave files: {summary['wave_file_count']}")
     print("\nInstruction classes by stall cycles:")
     for key, value in summary["instruction_class_stall_cycles"].items():
@@ -145,18 +157,30 @@ def print_text(summary: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("dispatch_dir")
+    parser.add_argument(
+        "dispatch_dir",
+        nargs="+",
+        help="One or more ui_output_agent_*_dispatch_* directories. A shell glob "
+             "may expand to several (empty-shell placeholders + the real capture); "
+             "each is summarized separately.",
+    )
     parser.add_argument("--top-source", type=int, default=20)
     parser.add_argument("--json-out")
     args = parser.parse_args()
 
-    dispatch_dir = Path(args.dispatch_dir).resolve()
-    summary = summarize(dispatch_dir, args.top_source)
-    print_text(summary)
+    summaries = []
+    for i, d in enumerate(args.dispatch_dir):
+        summary = summarize(Path(d).resolve(), args.top_source)
+        if i:
+            print()
+        print_text(summary)
+        summaries.append(summary)
+
     if args.json_out:
         out = Path(args.json_out)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(summary, indent=2) + "\n")
+        payload = summaries if len(summaries) > 1 else summaries[0]
+        out.write_text(json.dumps(payload, indent=2) + "\n")
     return 0
 
 

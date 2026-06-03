@@ -19,6 +19,7 @@ tail waves, VMEM waits before MFMA, barriers, or lack of K/V prefetch overlap?"
 
 ```bash
 python3 scripts/init_run_dir.py profile/<run-name>
+export PROFILE_RUN_DIR="$PWD/profile/<run-name>"   # used by every command below
 ```
 
 ## 2. Collect discovery stats

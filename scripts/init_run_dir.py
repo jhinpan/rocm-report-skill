@@ -24,7 +24,13 @@ SUBDIRS = [
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("run_dir", help="profile/<run-name>")
-    parser.add_argument("--force", action="store_true", help="allow existing empty directory")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="reuse a NON-empty run directory and refresh its metadata. Not "
+             "recommended -- the skill's rule is one run per kernel/shape/attempt. "
+             "(An empty directory is always accepted without --force.)",
+    )
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir).resolve()
@@ -40,9 +46,10 @@ def main() -> int:
         "cwd": os.getcwd(),
         "status": "draft",
     }
+    # Write unconditionally: on a --force reuse, stale created_at/cwd from the
+    # prior run would otherwise misreport this run's provenance.
     metadata_path = run_dir / "analysis" / "run_metadata.json"
-    if not metadata_path.exists():
-        metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
+    metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
 
     notes_path = run_dir / "analysis" / "notes.md"
     if not notes_path.exists():

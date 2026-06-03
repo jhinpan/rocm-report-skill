@@ -12,8 +12,14 @@ ui_output_agent_*_dispatch_*/
 
 Important checks:
 
-- `code.json` row count: approximate number of ISA rows.
-- mapped source rows: rows whose source-location field is non-empty.
+- wave files present: a dispatch dir with **no** `se*_sm*_*.json` is a rocprofv3
+  empty-shell placeholder, not the real capture — skip it (see
+  `02-rocprofv3-collection.md` "Dispatch selection"). `summarize_att_source.py`
+  reports `wave_file_count` per directory.
+- `code.json` row count: approximate ISA rows. `summarize_att_source.py` reports
+  `row_count` (all rows) and `isa_row_count` (label rows skipped).
+- mapped source rows: rows whose source-location field is non-empty
+  (`mapped_row_count`, as a percent of ISA rows).
 - top source lines by stall cycles or total cycles.
 - top instruction classes: `s_waitcnt`, `s_barrier`, `global/buffer_load`,
   `ds_read/ds_write`, `v_mfma`, stores, and other.

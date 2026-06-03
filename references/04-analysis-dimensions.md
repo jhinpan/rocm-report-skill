@@ -32,6 +32,13 @@ Signals:
 If the workload cannot fill the chip, communication/compute overlap inside one
 CTA will not fix global under-fill.
 
+> Evidence source: these are whole-chip properties. The single-CU ATT dispatch
+> (`att_target_cu: 1`) cannot supply them, and neither script computes them. Read
+> grid/block dims from the discovery `--kernel-trace` output (or the launch
+> params), and saturation from a separate whole-chip counter pass (`SQ_WAVES`,
+> `GRBM_GUI_ACTIVE`). Do not infer total CTAs or device-wide utilization from the
+> ATT trace — it is a representative wave-state sample of one CU.
+
 ## 2. Tail and Load Imbalance
 
 Question: do some CTAs finish much later than others?
